@@ -23,19 +23,22 @@ func main() {
 
 	putRouter := sm.Methods(http.MethodPut).Subrouter()
 	putRouter.HandleFunc("/{id:[0-9]+}", ph.UpdateProducts)
+	putRouter.Use(ph.MiddlewareValidateProduct)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.HandleFunc("/", ph.AddProduct)
+	postRouter.Use(ph.MiddlewareValidateProduct)
 
 	s := http.Server{
-		Addr:         ":9090",
-		Handler:      sm,
-		ErrorLog:     l,
-		IdleTimeout:  120 * time.Second,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		Addr:         ":9090",           // bind address
+		Handler:      sm,                // default handler
+		ErrorLog:     l,                 // logger for the server
+		IdleTimeout:  120 * time.Second, // max time for TCP Keep-Alive connections
+		ReadTimeout:  5 * time.Second,   // max time to read client request
+		WriteTimeout: 10 * time.Second,  // max time to write response for client
 	}
 
+	// start the server
 	go func() {
 		l.Println("Starting server on port 9090")
 		err := s.ListenAndServe()
@@ -45,13 +48,17 @@ func main() {
 		}
 	}()
 
+	// trap sigterm or interupt and gracefully shutdown the server
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	signal.Notify(c, os.Kill)
 
+	// block until a signal is received.
 	sig := <-c
 
 	log.Println("Got signal:", sig)
+
+	// gracefully shutdown the server, waiting max 30 seconds for current operations to complete
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	s.Shutdown(ctx)
 }

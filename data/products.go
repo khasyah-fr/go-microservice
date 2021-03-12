@@ -18,10 +18,13 @@ type Product struct {
 	DeletedOn   string  `json:"-"`
 }
 
+// FromJSON deserializes the JSON into a Product object
 func (p *Product) FromJSON(r io.Reader) error {
 	d := json.NewDecoder(r)
 	return d.Decode(p)
 }
+
+// Products is a collection of Product
 
 type Products []*Product
 
@@ -73,6 +76,7 @@ func getNextID() int {
 	return lp.ID + 1
 }
 
+// productList is a hard coded list of products for this
 var productList = []*Product{
 	&Product{
 		ID:          1,
