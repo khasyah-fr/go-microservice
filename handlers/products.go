@@ -103,6 +103,14 @@ func (p Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
 			return
 		}
 
+		// validate the product
+
+		err = prod.Validate()
+		if err != nil {
+			http.Error(rw, "Unable to validate JSON", http.StatusBadRequest)
+			return
+		}
+
 		// add the product to the context
 		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
 		req := r.WithContext(ctx)
